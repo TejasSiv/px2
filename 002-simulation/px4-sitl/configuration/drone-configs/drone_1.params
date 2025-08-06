@@ -1,0 +1,18 @@
+# PX4 Parameters for Drone 1 (Bravo)
+# Configuration for delivery drone with standard payload capacity
+
+# Vehicle Configuration
+SITL_VEHICLE_TYPE		1		# 1 = Quadrotor
+
+# System Identification
+SYS_AUTOSTART			4001	# Generic quadrotor airframe
+SYS_MC_EST_GROUP		2		# EKF2 estimator
+
+# MAVLink Configuration
+MAV_SYS_ID				2		# System ID for drone 1
+
+# Custom Parameters for Delivery Operations
+DELIVERY_PAYLOAD_MAX	5000	# Maximum payload (grams)
+DELIVERY_HOVER_TIME		30		# Default hover time for delivery (s)
+DELIVERY_APPROACH_ALT	10		# Delivery approach altitude (m)
+DELIVERY_PRECISION_M	2.0		# Delivery precision radius (m)

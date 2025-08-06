@@ -1,0 +1,91 @@
+# PX4 Parameters for Drone 0 (Alpha)
+# Configuration for delivery drone with standard payload capacity
+
+# Vehicle Configuration
+SITL_VEHICLE_TYPE		1		# 1 = Quadrotor
+
+# System Identification
+SYS_AUTOSTART			4001	# Generic quadrotor airframe
+SYS_MC_EST_GROUP		2		# EKF2 estimator
+
+# Battery Configuration
+BAT_N_CELLS				4		# 4S battery (14.8V nominal)
+BAT_V_CHARGED			4.2		# Fully charged cell voltage
+BAT_V_EMPTY				3.4		# Empty cell voltage
+BAT_CAPACITY			5000	# 5000 mAh battery
+
+# Flight Performance Parameters
+MPC_XY_VEL_MAX			12.0	# Maximum horizontal velocity (m/s)
+MPC_Z_VEL_MAX_UP		3.0		# Maximum ascent velocity (m/s)
+MPC_Z_VEL_MAX_DN		1.5		# Maximum descent velocity (m/s)
+MPC_XY_P				0.95	# Position control P gain
+MPC_XY_VEL_P_ACC		1.8		# Velocity control P gain
+MPC_XY_VEL_I_ACC		0.4		# Velocity control I gain
+MPC_XY_VEL_D_ACC		0.2		# Velocity control D gain
+
+# Mission Parameters
+MIS_TAKEOFF_ALT			2.5		# Default takeoff altitude (m)
+MIS_DIST_1WP			900		# Distance to first waypoint (m)
+MIS_LTRMIN_ALT			50		# Minimum loiter altitude (m)
+MIS_YAW_TMT				-1		# Yaw timeout (disabled)
+
+# Return to Launch Parameters
+RTL_RETURN_ALT			60		# RTL return altitude (m)
+RTL_DESCEND_ALT			30		# RTL descent altitude (m)
+RTL_LAND_DELAY			0		# Land delay at RTL point (s)
+
+# Geofence Parameters
+GF_ACTION				1		# Geofence action: 1 = Warning only
+GF_ALTMODE				0		# Altitude reference: 0 = WGS84
+GF_COUNT				0		# Number of geofence vertices
+GF_MAX_HOR_DIST			1000	# Maximum horizontal distance (m)
+GF_MAX_VER_DIST			150		# Maximum vertical distance (m)
+
+# Safety Parameters
+COM_DISARM_LAND			2.0		# Auto disarm after landing (s)
+COM_LOW_BAT_ACT			0		# Low battery action: 0 = Warning
+COM_MOT_TEST_EN			1		# Enable motor testing
+COM_OF_LOSS_T			5.0		# Optical flow loss timeout (s)
+COM_RC_LOSS_T			1.0		# RC loss timeout (s)
+
+# Failsafe Parameters
+NAV_DLL_ACT				0		# Data link loss action: 0 = None
+NAV_RCL_ACT				2		# RC loss action: 2 = Return
+COM_RCL_EXCEPT			4		# RC loss exceptions
+
+# Sensor Configuration
+SENS_BOARD_ROT			0		# Board rotation
+SENS_DPRES_OFF			0.0		# Differential pressure offset
+SENS_FLOW_ROT			0		# Flow sensor rotation
+
+# EKF2 Configuration
+EKF2_GPS_CHECK			21		# GPS quality checks
+EKF2_HGT_MODE			0		# Height sensor mode: 0 = Barometric
+EKF2_IMU_POS_X			0.0		# IMU X position offset
+EKF2_IMU_POS_Y			0.0		# IMU Y position offset
+EKF2_IMU_POS_Z			0.0		# IMU Z position offset
+
+# PWM Configuration
+PWM_MAIN_RATE			400		# Main PWM rate (Hz)
+PWM_AUX_RATE			50		# Auxiliary PWM rate (Hz)
+
+# Telemetry Configuration
+TEL_FRSKY_CONFIG		0		# FrSky telemetry configuration
+TEL_HOTT_CONFIG			0		# HoTT telemetry configuration
+
+# Logging Configuration
+SDLOG_PROFILE			1		# Default logging profile
+SDLOG_DIRS_MAX			0		# Maximum log directories (0 = unlimited)
+
+# MAVLink Configuration
+MAV_0_CONFIG			101		# MAVLink protocol configuration
+MAV_0_RATE				1200	# MAVLink stream rate
+MAV_0_FORWARD			1		# Forward MAVLink messages
+MAV_SYS_ID				1		# System ID for drone 0
+
+# Custom Parameters for Delivery Operations
+# These can be used by mission planning software
+DELIVERY_PAYLOAD_MAX	5000	# Maximum payload (grams)
+DELIVERY_HOVER_TIME		30		# Default hover time for delivery (s)
+DELIVERY_APPROACH_ALT	10		# Delivery approach altitude (m)
+DELIVERY_PRECISION_M	2.0		# Delivery precision radius (m)

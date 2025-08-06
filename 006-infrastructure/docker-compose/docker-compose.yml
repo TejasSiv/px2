@@ -1,0 +1,216 @@
+version: '3.8'
+
+services:
+  # Database services
+  postgres:
+    image: postgres:15
+    container_name: dfm_postgres
+    environment:
+      POSTGRES_DB: drone_fleet_management
+      POSTGRES_USER: dfm_user
+      POSTGRES_PASSWORD: dfm_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ../../005-database/migrations:/docker-entrypoint-initdb.d
+    networks:
+      - dfm_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: dfm_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - dfm_network
+
+  # Simulation services
+  gazebo:
+    build:
+      context: ../docker/gazebo
+      dockerfile: Dockerfile
+    container_name: dfm_gazebo
+    environment:
+      - DISPLAY=${DISPLAY}
+      - GAZEBO_HEADLESS=1
+    volumes:
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      - ../../002-simulation/gazebo:/workspace/gazebo
+    ports:
+      - "11345:11345"  # Gazebo master
+    networks:
+      - dfm_network
+    depends_on:
+      - postgres
+      - redis
+
+  # PX4 SITL Fleet - 5 Drones
+  px4_drone_0:
+    build:
+      context: ../docker/px4
+      dockerfile: Dockerfile
+    container_name: dfm_px4_drone_0
+    environment:
+      - PX4_SIM_MODEL=iris
+      - PX4_INSTANCE=0
+      - PX4_SIM_SPEED_FACTOR=1
+      - GAZEBO_MASTER_URI=http://gazebo:11345
+      - DRONE_ID=DRN001
+      - SPAWN_X=0
+      - SPAWN_Y=0
+    volumes:
+      - ../../002-simulation/px4-sitl:/workspace/px4-sitl
+    ports:
+      - "14550:14550/udp"  # MAVLink
+      - "14580:14580/udp"  # MAVLink camera
+    networks:
+      - dfm_network
+    depends_on:
+      - gazebo
+
+  px4_drone_1:
+    build:
+      context: ../docker/px4
+      dockerfile: Dockerfile
+    container_name: dfm_px4_drone_1
+    environment:
+      - PX4_SIM_MODEL=iris
+      - PX4_INSTANCE=1
+      - PX4_SIM_SPEED_FACTOR=1
+      - GAZEBO_MASTER_URI=http://gazebo:11345
+      - DRONE_ID=DRN002
+      - SPAWN_X=10
+      - SPAWN_Y=0
+    volumes:
+      - ../../002-simulation/px4-sitl:/workspace/px4-sitl
+    ports:
+      - "14551:14550/udp"  # MAVLink
+      - "14581:14580/udp"  # MAVLink camera
+    networks:
+      - dfm_network
+    depends_on:
+      - gazebo
+
+  px4_drone_2:
+    build:
+      context: ../docker/px4
+      dockerfile: Dockerfile
+    container_name: dfm_px4_drone_2
+    environment:
+      - PX4_SIM_MODEL=iris
+      - PX4_INSTANCE=2
+      - PX4_SIM_SPEED_FACTOR=1
+      - GAZEBO_MASTER_URI=http://gazebo:11345
+      - DRONE_ID=DRN003
+      - SPAWN_X=20
+      - SPAWN_Y=0
+    volumes:
+      - ../../002-simulation/px4-sitl:/workspace/px4-sitl
+    ports:
+      - "14552:14550/udp"  # MAVLink
+      - "14582:14580/udp"  # MAVLink camera
+    networks:
+      - dfm_network
+    depends_on:
+      - gazebo
+
+  px4_drone_3:
+    build:
+      context: ../docker/px4
+      dockerfile: Dockerfile
+    container_name: dfm_px4_drone_3
+    environment:
+      - PX4_SIM_MODEL=iris
+      - PX4_INSTANCE=3
+      - PX4_SIM_SPEED_FACTOR=1
+      - GAZEBO_MASTER_URI=http://gazebo:11345
+      - DRONE_ID=DRN004
+      - SPAWN_X=0
+      - SPAWN_Y=10
+    volumes:
+      - ../../002-simulation/px4-sitl:/workspace/px4-sitl
+    ports:
+      - "14553:14550/udp"  # MAVLink
+      - "14583:14580/udp"  # MAVLink camera
+    networks:
+      - dfm_network
+    depends_on:
+      - gazebo
+
+  px4_drone_4:
+    build:
+      context: ../docker/px4
+      dockerfile: Dockerfile
+    container_name: dfm_px4_drone_4
+    environment:
+      - PX4_SIM_MODEL=iris
+      - PX4_INSTANCE=4
+      - PX4_SIM_SPEED_FACTOR=1
+      - GAZEBO_MASTER_URI=http://gazebo:11345
+      - DRONE_ID=DRN005
+      - SPAWN_X=10
+      - SPAWN_Y=10
+    volumes:
+      - ../../002-simulation/px4-sitl:/workspace/px4-sitl
+    ports:
+      - "14554:14550/udp"  # MAVLink
+      - "14584:14580/udp"  # MAVLink camera
+    networks:
+      - dfm_network
+    depends_on:
+      - gazebo
+
+  # ROS2 coordination services
+  ros2_coordinator:
+    build:
+      context: ../docker/ros2
+      dockerfile: Dockerfile
+    container_name: dfm_ros2_coordinator
+    environment:
+      - ROS_DOMAIN_ID=1
+      - RMW_IMPLEMENTATION=rmw_cyclonedx_cpp
+    volumes:
+      - ../../002-simulation/ros2-nodes:/workspace/ros2_ws/src
+    ports:
+      - "7400:7400"  # ROS2 DDS
+    networks:
+      - dfm_network
+    depends_on:
+      - gazebo
+      - px4_drone_0
+      - px4_drone_1
+      - px4_drone_2
+      - px4_drone_3
+      - px4_drone_4
+
+  # Backend services (minimal for now)
+  telemetry_service:
+    build:
+      context: ../docker/backend
+      dockerfile: Dockerfile
+    container_name: dfm_telemetry_service
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://dfm_user:dfm_password@postgres:5432/drone_fleet_management
+      - REDIS_URL=redis://redis:6379
+      - SERVICE_NAME=telemetry
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../../003-backend-services/telemetry-service:/app
+    networks:
+      - dfm_network
+    depends_on:
+      - postgres
+      - redis
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  dfm_network:
+    driver: bridge
