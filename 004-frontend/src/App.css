@@ -55,6 +55,36 @@ body {
   @apply bg-text-muted;
 }
 
+/* Thin scrollbar for modals and compact areas */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  @apply bg-dark-border;
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  @apply bg-text-muted;
+}
+
+.scrollbar-thin::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* For Firefox */
+.scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: theme('colors.dark.border') transparent;
+}
+
 /* Custom animations */
 @keyframes glow {
   0%, 100% {

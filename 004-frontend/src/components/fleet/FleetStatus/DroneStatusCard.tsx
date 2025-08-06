@@ -8,6 +8,7 @@ import {
   CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { DroneData } from '@/types/fleet';
+import BatteryIndicator from '@/components/telemetry/BatteryIndicator';
 
 interface DroneStatusCardProps {
   drone: DroneData;
@@ -160,18 +161,14 @@ const DroneStatusCard: React.FC<DroneStatusCardProps> = ({
         {/* Battery */}
         <div className="min-w-0">
           <div className="text-text-secondary text-xs mb-1">Battery</div>
-          <div className="flex items-center gap-2">
-            <div className="flex-1 bg-dark-border rounded-full h-1.5">
-              <div 
-                className="h-full rounded-full transition-all duration-300"
-                style={{ 
-                  width: `${drone.batteryLevel}%`, 
-                  backgroundColor: drone.batteryLevel > 30 ? '#238636' : drone.batteryLevel > 15 ? '#d29922' : '#da3633'
-                }}
-              />
-            </div>
-            <span className="text-xs font-mono text-text-primary">{drone.batteryLevel.toFixed(0)}%</span>
-          </div>
+          <BatteryIndicator
+            level={drone.batteryLevel}
+            voltage={drone.batteryVoltage}
+            inFlight={['active', 'in_flight'].includes(drone.status)}
+            status={drone.status}
+            size="sm"
+            showVoltage={false}
+          />
         </div>
 
         {/* Signal */}

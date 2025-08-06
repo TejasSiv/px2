@@ -1,0 +1,896 @@
+openapi: 3.0.3
+info:
+  title: Safety Service API
+  description: |
+    Comprehensive safety monitoring and emergency response system for drone fleet management.
+    
+    This service provides:
+    - Real-time battery level monitoring
+    - Multi-level alert system with WebSocket notifications
+    - Automated emergency protocols
+    - Safety analytics and reporting
+    
+    The Safety Service continuously monitors drone telemetry data and executes emergency protocols
+    when critical conditions are detected, ensuring safe fleet operations.
+    
+  version: 1.0.0
+  contact:
+    name: Drone Fleet Management Team
+    email: support@dronefleet.example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3005/api/v1
+    description: Development server
+  - url: https://api.dronefleet.example.com/safety/v1
+    description: Production server
+
+tags:
+  - name: Safety Status
+    description: Overall system safety monitoring
+  - name: Alerts
+    description: Alert management and notifications
+  - name: Battery
+    description: Battery level monitoring and analysis
+  - name: Emergency
+    description: Emergency protocol management
+  - name: WebSocket
+    description: Real-time communication
+
+paths:
+  # Safety Status Endpoints
+  /status:
+    get:
+      tags: [Safety Status]
+      summary: Get overall safety status
+      description: Returns current system safety status including alerts, health, and metrics
+      responses:
+        '200':
+          description: Safety status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      safety:
+                        $ref: '#/components/schemas/SafetyStatus'
+                      health:
+                        $ref: '#/components/schemas/SystemHealth'
+                      timestamp:
+                        type: number
+                        example: 1703097600000
+
+  /stats:
+    get:
+      tags: [Safety Status]
+      summary: Get safety statistics
+      description: Returns detailed statistics about safety monitoring performance
+      responses:
+        '200':
+          description: Safety statistics retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SafetyStats'
+
+  # Alert Management Endpoints
+  /alerts:
+    get:
+      tags: [Alerts]
+      summary: Get all alerts
+      description: Retrieve all active alerts, optionally including resolved alerts
+      parameters:
+        - name: resolved
+          in: query
+          description: Include resolved alerts
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Alerts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      alerts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SafetyAlert'
+                      count:
+                        type: number
+                        example: 5
+                      includeResolved:
+                        type: boolean
+                        example: false
+
+    post:
+      tags: [Alerts]
+      summary: Create custom alert
+      description: Create a new custom safety alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [severity, type, message]
+              properties:
+                droneId:
+                  type: string
+                  example: "drone-001"
+                severity:
+                  type: string
+                  enum: [info, warning, critical]
+                  example: warning
+                type:
+                  type: string
+                  example: "maintenance_required"
+                message:
+                  type: string
+                  maxLength: 500
+                  example: "Scheduled maintenance due in 2 days"
+                category:
+                  type: string
+                  example: "maintenance"
+                data:
+                  type: object
+                  example: {}
+      responses:
+        '201':
+          description: Alert created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/SafetyAlert'
+                  message:
+                    type: string
+                    example: "Alert created successfully"
+
+  /alerts/drone/{droneId}:
+    get:
+      tags: [Alerts]
+      summary: Get alerts for specific drone
+      description: Retrieve all active alerts for a specific drone
+      parameters:
+        - name: droneId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "drone-001"
+      responses:
+        '200':
+          description: Drone alerts retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      droneId:
+                        type: string
+                        example: "drone-001"
+                      alerts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SafetyAlert'
+                      count:
+                        type: number
+                        example: 2
+
+  /alerts/{alertId}/acknowledge:
+    post:
+      tags: [Alerts]
+      summary: Acknowledge alert
+      description: Mark an alert as acknowledged by an operator
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [acknowledgedBy]
+              properties:
+                acknowledgedBy:
+                  type: string
+                  example: "operator-001"
+      responses:
+        '200':
+          description: Alert acknowledged successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Alert acknowledged successfully"
+
+  /alerts/{alertId}/resolve:
+    post:
+      tags: [Alerts]
+      summary: Resolve alert
+      description: Mark an alert as resolved with resolution details
+      parameters:
+        - name: alertId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolution, resolvedBy]
+              properties:
+                resolution:
+                  type: string
+                  maxLength: 1000
+                  example: "Battery replaced and drone returned to service"
+                resolvedBy:
+                  type: string
+                  example: "technician-001"
+      responses:
+        '200':
+          description: Alert resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Alert resolved successfully"
+
+  # Battery Monitoring Endpoints
+  /battery:
+    get:
+      tags: [Battery]
+      summary: Get battery status for all drones
+      description: Retrieve current battery status and monitoring data for all drones
+      responses:
+        '200':
+          description: Battery statuses retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      statuses:
+                        type: object
+                        additionalProperties:
+                          $ref: '#/components/schemas/BatteryStatus'
+                      count:
+                        type: number
+                        example: 5
+                      thresholds:
+                        $ref: '#/components/schemas/BatteryThresholds'
+
+  /battery/{droneId}:
+    get:
+      tags: [Battery]
+      summary: Get battery status for specific drone
+      description: Retrieve detailed battery status and history for a specific drone
+      parameters:
+        - name: droneId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "drone-001"
+      responses:
+        '200':
+          description: Battery status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BatteryStatus'
+
+  /battery/stats:
+    get:
+      tags: [Battery]
+      summary: Get battery monitoring statistics
+      description: Retrieve battery monitoring performance and statistics
+      responses:
+        '200':
+          description: Battery monitoring stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/BatteryMonitoringStats'
+
+  # Emergency Protocol Endpoints
+  /emergency:
+    get:
+      tags: [Emergency]
+      summary: Get active emergencies
+      description: Retrieve all currently active emergency protocols
+      responses:
+        '200':
+          description: Active emergencies retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      emergencies:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EmergencyProtocol'
+                      count:
+                        type: number
+                        example: 1
+
+  /emergency/drone/{droneId}:
+    get:
+      tags: [Emergency]
+      summary: Get emergency for specific drone
+      description: Retrieve active emergency protocol for a specific drone
+      parameters:
+        - name: droneId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "drone-001"
+      responses:
+        '200':
+          description: Emergency retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/EmergencyProtocol'
+        '404':
+          description: No active emergency found for this drone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /emergency/history:
+    get:
+      tags: [Emergency]
+      summary: Get emergency history
+      description: Retrieve historical emergency protocol records
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of records to return
+          schema:
+            type: integer
+            default: 50
+            maximum: 100
+      responses:
+        '200':
+          description: Emergency history retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      history:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EmergencyProtocol'
+                      count:
+                        type: number
+                        example: 10
+                      limit:
+                        type: number
+                        example: 50
+
+  /emergency/{emergencyId}/resolve:
+    post:
+      tags: [Emergency]
+      summary: Resolve emergency
+      description: Manually resolve an active emergency protocol
+      parameters:
+        - name: emergencyId
+          in: path
+          required: true
+          schema:
+            type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [type, resolvedBy]
+              properties:
+                type:
+                  type: string
+                  example: "manual_intervention"
+                description:
+                  type: string
+                  example: "Emergency resolved by ground crew intervention"
+                resolvedBy:
+                  type: string
+                  example: "operator-001"
+      responses:
+        '200':
+          description: Emergency resolved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/EmergencyProtocol'
+                  message:
+                    type: string
+                    example: "Emergency resolved successfully"
+
+  /emergency/stats:
+    get:
+      tags: [Emergency]
+      summary: Get emergency protocol statistics
+      description: Retrieve emergency protocol performance and statistics
+      responses:
+        '200':
+          description: Emergency protocol stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/EmergencyStats'
+
+  # WebSocket Endpoints
+  /websocket/stats:
+    get:
+      tags: [WebSocket]
+      summary: Get WebSocket connection statistics
+      description: Retrieve statistics about active WebSocket connections
+      responses:
+        '200':
+          description: WebSocket stats retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/WebSocketStats'
+
+components:
+  schemas:
+    SafetyStatus:
+      type: object
+      properties:
+        overall:
+          type: string
+          enum: [safe, caution, warning, critical]
+          example: warning
+        lastCheck:
+          type: number
+          example: 1703097600000
+        criticalAlerts:
+          type: number
+          example: 1
+        warningAlerts:
+          type: number
+          example: 3
+        activeDrones:
+          type: number
+          example: 5
+        dronesAtRisk:
+          type: number
+          example: 2
+        totalAlerts:
+          type: number
+          example: 4
+
+    SystemHealth:
+      type: object
+      properties:
+        database:
+          type: string
+          enum: [healthy, degraded, critical]
+          example: healthy
+        cache:
+          type: string
+          enum: [healthy, degraded, critical]
+          example: healthy
+        services:
+          type: object
+          properties:
+            batteryMonitor:
+              type: string
+              enum: [healthy, degraded, critical]
+              example: healthy
+            emergencyProtocol:
+              type: string
+              enum: [healthy, degraded, critical]
+              example: healthy
+
+    SafetyAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        droneId:
+          type: string
+          example: "drone-001"
+        severity:
+          type: string
+          enum: [info, warning, critical]
+          example: critical
+        type:
+          type: string
+          example: "battery"
+        message:
+          type: string
+          example: "Battery critically low at 12%. Immediate landing required."
+        category:
+          type: string
+          example: "safety"
+        timestamp:
+          type: string
+          format: date-time
+          example: "2023-12-20T14:30:00Z"
+        data:
+          type: object
+          example:
+            batteryLevel: 12
+            batteryVoltage: 11.2
+            actionRequired: true
+        resolved:
+          type: boolean
+          example: false
+        acknowledged:
+          type: boolean
+          example: false
+
+    BatteryStatus:
+      type: object
+      properties:
+        droneId:
+          type: string
+          example: "drone-001"
+        currentStatus:
+          type: object
+          properties:
+            batteryLevel:
+              type: number
+              example: 45
+            safetyLevel:
+              type: string
+              enum: [safe, caution, warning, critical]
+              example: caution
+            recommendations:
+              type: array
+              items:
+                type: string
+              example: ["Consider charging soon"]
+            lastCheck:
+              type: number
+              example: 1703097600000
+        history:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                type: number
+                example: 47
+              timestamp:
+                type: number
+                example: 1703097300000
+        trend:
+          type: object
+          properties:
+            declining:
+              type: boolean
+              example: true
+            rate:
+              type: number
+              example: 1.2
+            prediction:
+              type: object
+              properties:
+                level:
+                  type: number
+                  example: 15
+                estimatedMinutes:
+                  type: number
+                  example: 25
+        thresholds:
+          $ref: '#/components/schemas/BatteryThresholds'
+
+    BatteryThresholds:
+      type: object
+      properties:
+        emergency:
+          type: number
+          example: 10
+        critical:
+          type: number
+          example: 15
+        warning:
+          type: number
+          example: 25
+        low:
+          type: number
+          example: 35
+
+    EmergencyProtocol:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        droneId:
+          type: string
+          example: "drone-001"
+        type:
+          type: string
+          example: "battery_critical"
+        severity:
+          type: string
+          enum: [warning, critical]
+          example: critical
+        status:
+          type: string
+          enum: [active, resolved, timeout]
+          example: active
+        initiatedAt:
+          type: number
+          example: 1703097600000
+        actions:
+          type: array
+          items:
+            type: object
+            properties:
+              action:
+                type: string
+                example: "abort_mission"
+              status:
+                type: string
+                enum: [success, failed]
+                example: success
+              timestamp:
+                type: number
+                example: 1703097610000
+              details:
+                type: string
+                example: "Mission aborted successfully"
+        resolution:
+          type: object
+          properties:
+            type:
+              type: string
+              example: "emergency_landing_completed"
+            timestamp:
+              type: number
+              example: 1703097900000
+            description:
+              type: string
+              example: "Drone landed safely at emergency site"
+
+    SafetyStats:
+      type: object
+      properties:
+        isRunning:
+          type: boolean
+          example: true
+        systemSafetyStatus:
+          $ref: '#/components/schemas/SafetyStatus'
+        batteryMonitor:
+          $ref: '#/components/schemas/BatteryMonitoringStats'
+        emergencyProtocol:
+          $ref: '#/components/schemas/EmergencyStats'
+
+    BatteryMonitoringStats:
+      type: object
+      properties:
+        isRunning:
+          type: boolean
+          example: true
+        config:
+          $ref: '#/components/schemas/BatteryThresholds'
+        recentNotifications:
+          type: number
+          example: 3
+        trackedTrends:
+          type: number
+          example: 5
+
+    EmergencyStats:
+      type: object
+      properties:
+        isRunning:
+          type: boolean
+          example: true
+        activeEmergencies:
+          type: number
+          example: 0
+        activeTimeouts:
+          type: number
+          example: 0
+
+    WebSocketStats:
+      type: object
+      properties:
+        total:
+          type: number
+          example: 8
+        bySubscription:
+          type: object
+          additionalProperties:
+            type: number
+          example:
+            battery_alerts: 5
+            emergency_alerts: 8
+            all_alerts: 3
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          example: "Not found"
+        message:
+          type: string
+          example: "No active emergency found for this drone"
+
+  responses:
+    BadRequest:
+      description: Bad request - validation error
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success:
+                type: boolean
+                example: false
+              error:
+                type: string
+                example: "Validation error"
+              details:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    field:
+                      type: string
+                    message:
+                      type: string
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  parameters:
+    DroneId:
+      name: droneId
+      in: path
+      required: true
+      description: Unique identifier for the drone
+      schema:
+        type: string
+      example: "drone-001"
+
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      description: Unique identifier for the alert
+      schema:
+        type: string
+        format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+    EmergencyId:
+      name: emergencyId
+      in: path
+      required: true
+      description: Unique identifier for the emergency protocol
+      schema:
+        type: string
+        format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"

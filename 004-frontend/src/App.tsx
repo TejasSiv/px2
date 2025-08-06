@@ -4,8 +4,11 @@ import FleetMap from '@/components/fleet/FleetMap';
 import FleetStatus from '@/components/fleet/FleetStatus';
 import TelemetryPanel from '@/components/telemetry/TelemetryPanel';
 import ConnectionStatusIndicator from '@/components/common/ConnectionStatusIndicator';
+import SafetyPanel from '@/components/safety/SafetyPanel';
+import { MissionControls } from '@/components/mission';
 import { useFleetStore, useConnectionStatus, useSelectedDrone, initializeFleetStore } from '@/store/fleet';
-import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
+import { initializeMissionWebSocket } from '@/store/mission';
+import { ChevronLeftIcon, ChevronRightIcon, RocketLaunchIcon } from '@heroicons/react/24/outline';
 
 function App() {
   const { state: connectionState, isConnected, error: connectionError } = useConnectionStatus();
@@ -14,10 +17,12 @@ function App() {
   const selectedDrone = useSelectedDrone();
   const selectDrone = useFleetStore((state) => state.selectDrone);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showMissionCenter, setShowMissionCenter] = useState(false);
 
-  // Initialize the fleet store and WebSocket connection
+  // Initialize the fleet store and WebSocket connections
   useEffect(() => {
     initializeFleetStore();
+    initializeMissionWebSocket();
   }, []);
 
   const handleDroneSelect = (droneId: string) => {
@@ -118,11 +123,22 @@ function App() {
                 Real-time fleet monitoring and control dashboard
               </p>
             </div>
-            <ConnectionStatusIndicator 
-              connectionState={connectionState}
-              isConnected={isConnected}
-              error={connectionError || undefined}
-            />
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowMissionCenter(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-status-active hover:bg-status-active/80 
+                         text-white rounded-lg font-medium transition-colors"
+              >
+                <RocketLaunchIcon className="w-5 h-5" />
+                Mission Center
+              </button>
+              
+              <ConnectionStatusIndicator 
+                connectionState={connectionState}
+                isConnected={isConnected}
+                error={connectionError || undefined}
+              />
+            </div>
           </div>
         </header>
 
@@ -139,19 +155,50 @@ function App() {
               />
             </div>
             
-            {/* Right Panel - Telemetry Container */}
-            <div className="lg:col-span-1 h-full overflow-hidden">
-              <div className="h-full w-full border border-dark-border rounded-lg bg-dark-secondary overflow-hidden">
+            {/* Right Panel - Split between Telemetry, Safety, and Missions */}
+            <div className="lg:col-span-1 h-full overflow-hidden flex flex-col gap-4">
+              {/* Telemetry Panel - Top Third */}
+              <div className="flex-1 border border-dark-border rounded-lg bg-dark-secondary overflow-hidden">
                 <TelemetryPanel
                   drone={selectedDrone}
                   isLive={isConnected}
                   className="h-full w-full"
                 />
               </div>
+              
+              {/* Safety Panel - Middle Third */}
+              <div className="flex-1">
+                <SafetyPanel className="h-full" />
+              </div>
+              
+              {/* Mission Controls - Bottom Third */}
+              <div className="flex-1">
+                <MissionControls />
+              </div>
             </div>
           </div>
         </main>
       </div>
+      
+      {/* Mission Center Modal */}
+      {showMissionCenter && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+             onClick={(e) => {
+               // Close modal when clicking backdrop
+               if (e.target === e.currentTarget) {
+                 setShowMissionCenter(false);
+               }
+             }}>
+          <div className="bg-dark-secondary rounded-lg border border-dark-border shadow-2xl
+                         w-full max-w-7xl max-h-[95vh] overflow-hidden relative z-[10000]"
+               onClick={(e) => e.stopPropagation()}>
+            <MissionControls 
+              className="h-full" 
+              onClose={() => setShowMissionCenter(false)} 
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
