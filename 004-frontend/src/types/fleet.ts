@@ -31,7 +31,7 @@ export interface Mission {
   name: string;
   progress: number;
   eta?: string;
-  status: 'pending' | 'active' | 'completed' | 'failed' | 'cancelled';
+  status: 'pending' | 'active' | 'completed' | 'failed' | 'cancelled' | 'paused';
 }
 
 export interface Waypoint {
@@ -53,6 +53,7 @@ export interface MissionData extends Mission {
   createdAt: string;
   startedAt?: string;
   completedAt?: string;
+  description?: string;
 }
 
 export interface DroneData {

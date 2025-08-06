@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
-import { MissionData, Waypoint } from '@/types/fleet';
+import { MissionData } from '@/types/fleet';
 
 interface MissionStats {
   total: number;

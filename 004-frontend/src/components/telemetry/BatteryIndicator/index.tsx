@@ -5,9 +5,11 @@ import { BoltIcon } from '@heroicons/react/24/outline';
 interface BatteryIndicatorProps {
   level: number;
   voltage?: number;
+  status?: "active" | "idle" | "in_flight" | "charging" | "maintenance" | "emergency";
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   showVoltage?: boolean;
+  inFlight?: boolean;
   className?: string;
 }
 

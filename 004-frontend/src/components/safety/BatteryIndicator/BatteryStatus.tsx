@@ -19,7 +19,6 @@ const BatteryStatus: React.FC<BatteryStatusProps> = ({
   level,
   voltage,
   inFlight = false,
-  status = 'unknown',
   size = 'md',
   showLabel = true,
   showVoltage = false
@@ -32,7 +31,7 @@ const BatteryStatus: React.FC<BatteryStatusProps> = ({
     return 'text-green-400 bg-green-500';
   };
 
-  const getBatteryWarning = (level: number, inFlight: boolean) => {
+  const getBatteryWarning = (level: number) => {
     if (level <= 10) return { icon: ExclamationTriangleIcon, text: 'EMERGENCY', severe: true };
     if (level <= 15) return { icon: ExclamationTriangleIcon, text: 'CRITICAL', severe: true };
     if (level <= 25) return { icon: ShieldExclamationIcon, text: 'LOW', severe: false };
@@ -67,7 +66,7 @@ const BatteryStatus: React.FC<BatteryStatusProps> = ({
   };
 
   const colorClasses = getBatteryColor(level, inFlight);
-  const warning = getBatteryWarning(level, inFlight);
+  const warning = getBatteryWarning(level);
   const sizeClasses = getSizeClasses(size);
   
   const fillWidth = Math.max(0, Math.min(100, level));

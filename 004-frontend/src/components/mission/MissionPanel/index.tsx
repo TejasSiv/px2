@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   RocketLaunchIcon,
   MapPinIcon,
-  ClockIcon,
   ChartBarIcon,
   PlusIcon,
   EyeIcon
@@ -26,7 +25,6 @@ const MissionPanel: React.FC<MissionPanelProps> = ({
     missions,
     activeMissions,
     missionStats,
-    selectedMissionId,
     selectMission,
     assignMissionToDrone
   } = useMissionStore();

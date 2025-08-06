@@ -6,9 +6,7 @@ import {
   XMarkIcon,
   CheckCircleIcon,
   ClockIcon,
-  ExclamationTriangleIcon,
-  EyeIcon,
-  PlusIcon
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 import { MissionData, DroneData } from '@/types/fleet';
 import { useFleetStore } from '@/store/fleet';
@@ -29,7 +27,7 @@ interface Assignment {
 const AssignmentManager: React.FC<AssignmentManagerProps> = ({ className = '' }) => {
   const drones = useFleetStore((state) => Object.values(state.drones));
   const dronesMap = useFleetStore((state) => state.drones);
-  const { missions, assignMissionToDrone, updateMission } = useMissionStore();
+  const { missions, updateMission } = useMissionStore();
   
   const [selectedMissionForAssignment, setSelectedMissionForAssignment] = useState<MissionData | null>(null);
   const [filter, setFilter] = useState<'all' | 'assigned' | 'unassigned' | 'issues'>('all');
@@ -135,7 +133,7 @@ const AssignmentManager: React.FC<AssignmentManagerProps> = ({ className = '' })
 
   const handleUnassign = async (missionId: string) => {
     try {
-      await updateMission(missionId, { assignedDrone: null });
+      await updateMission(missionId, { assignedDrone: undefined });
     } catch (error) {
       console.error('Failed to unassign mission:', error);
     }

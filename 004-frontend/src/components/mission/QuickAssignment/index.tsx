@@ -4,10 +4,9 @@ import {
   UserIcon,
   CheckCircleIcon,
   XCircleIcon,
-  ArrowRightIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
-import { MissionData, DroneData } from '@/types/fleet';
+import { MissionData } from '@/types/fleet';
 import { useFleetStore } from '@/store/fleet';
 import useMissionStore from '@/store/mission';
 
