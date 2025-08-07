@@ -28,9 +28,8 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: false,
-    minify: 'esbuild',
-    target: 'esnext',
-    // Skip TypeScript checking during build - Vite handles it internally
+    minify: 'terser', // Use terser instead of esbuild
+    target: 'es2020',
     emptyOutDir: true,
     rollupOptions: {
       output: {
@@ -43,18 +42,16 @@ export default defineConfig({
       }
     }
   },
-  // TypeScript configuration for Vite
-  esbuild: {
-    logOverride: { 'this-is-undefined-in-esm': 'silent' }
-  },
-  // Force esbuild to use the correct binary
+  // Completely disable esbuild
+  esbuild: false,
+  // Disable deps optimizer to avoid esbuild
   optimizeDeps: {
-    esbuildOptions: {
-      target: 'esnext'
-    }
+    noDiscovery: true,
+    include: []
   },
   // Vercel-specific configuration
   define: {
     global: 'globalThis',
+    'process.env.NODE_ENV': JSON.stringify('production')
   }
 })
