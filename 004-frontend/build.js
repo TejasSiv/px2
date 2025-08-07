@@ -1,19 +1,21 @@
 #!/usr/bin/env node
 
-// Build script to bypass binary permission issues on Vercel
+// Standalone build script to bypass esbuild binary permission issues on Vercel
 import { build } from 'vite';
 import { resolve } from 'path';
 import react from '@vitejs/plugin-react';
 
 async function buildApp() {
   try {
-    console.log('🚀 Starting Vite build process...');
+    console.log('🚀 Starting standalone Vite build process...');
     console.log('📁 Working directory:', process.cwd());
     console.log('🟢 Node.js version:', process.version);
     
+    // Completely standalone config that doesn't load vite.config.ts
     const config = {
       root: process.cwd(),
       mode: 'production',
+      configFile: false, // Don't load vite.config.ts
       plugins: [react()],
       resolve: {
         alias: {
@@ -24,8 +26,8 @@ async function buildApp() {
         outDir: 'dist',
         emptyOutDir: true,
         sourcemap: false,
-        minify: 'esbuild',
-        target: 'esnext',
+        minify: 'terser', // Use terser instead of esbuild
+        target: 'es2020',
         rollupOptions: {
           output: {
             manualChunks: {
@@ -37,13 +39,10 @@ async function buildApp() {
           }
         }
       },
-      esbuild: {
-        logOverride: { 'this-is-undefined-in-esm': 'silent' }
-      },
+      // Disable esbuild completely
+      esbuild: false,
       optimizeDeps: {
-        esbuildOptions: {
-          target: 'esnext'
-        }
+        disabled: true
       },
       define: {
         global: 'globalThis',
@@ -51,7 +50,7 @@ async function buildApp() {
       }
     };
     
-    console.log('⚙️  Starting build with config...');
+    console.log('⚙️  Starting build with standalone config...');
     await build(config);
     
     console.log('✅ Build completed successfully!');

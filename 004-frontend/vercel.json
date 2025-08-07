@@ -1,7 +1,11 @@
 {
-  "buildCommand": "node build.js",
+  "buildCommand": "node build-simple.js || node build.js",
   "outputDirectory": "dist",
   "rewrites": [
+    {
+      "source": "/health",
+      "destination": "/health.json"
+    },
     {
       "source": "/(.*)",
       "destination": "/index.html"
