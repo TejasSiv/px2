@@ -27,7 +27,9 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: true,
+    sourcemap: false, // Disable sourcemaps for production builds
+    minify: 'esbuild',
+    target: 'esnext',
     rollupOptions: {
       output: {
         manualChunks: {
@@ -38,5 +40,15 @@ export default defineConfig({
         }
       }
     }
+  },
+  // Force esbuild to use the correct binary
+  optimizeDeps: {
+    esbuildOptions: {
+      target: 'esnext'
+    }
+  },
+  // Vercel-specific configuration
+  define: {
+    global: 'globalThis',
   }
 })
