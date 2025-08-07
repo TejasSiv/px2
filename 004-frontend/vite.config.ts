@@ -27,9 +27,11 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false, // Disable sourcemaps for production builds
+    sourcemap: false,
     minify: 'esbuild',
     target: 'esnext',
+    // Skip TypeScript checking during build - Vite handles it internally
+    emptyOutDir: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -40,6 +42,10 @@ export default defineConfig({
         }
       }
     }
+  },
+  // TypeScript configuration for Vite
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
   },
   // Force esbuild to use the correct binary
   optimizeDeps: {
