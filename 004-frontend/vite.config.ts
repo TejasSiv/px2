@@ -27,10 +27,7 @@ export default defineConfig({
   },
   build: {
     outDir: 'dist',
-    sourcemap: false,
-    minify: 'terser', // Use terser instead of esbuild
-    target: 'es2020',
-    emptyOutDir: true,
+    sourcemap: true,
     rollupOptions: {
       output: {
         manualChunks: {
@@ -41,17 +38,5 @@ export default defineConfig({
         }
       }
     }
-  },
-  // Completely disable esbuild
-  esbuild: false,
-  // Disable deps optimizer to avoid esbuild
-  optimizeDeps: {
-    noDiscovery: true,
-    include: []
-  },
-  // Vercel-specific configuration
-  define: {
-    global: 'globalThis',
-    'process.env.NODE_ENV': JSON.stringify('production')
   }
 })
