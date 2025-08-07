@@ -122,8 +122,8 @@ const FleetStatus: React.FC<FleetStatusProps> = ({
       </div>
 
       {/* Drone Cards */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-2 space-y-2">
+      <div className="flex-1 overflow-y-auto scrollbar-thin">
+        <div className="p-2 space-y-3">
           <AnimatePresence mode="popLayout">
             {filteredDrones.map((drone, index) => (
               <DroneStatusCard

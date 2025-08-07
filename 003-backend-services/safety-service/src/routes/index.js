@@ -1,6 +1,7 @@
 const express = require('express');
 const Joi = require('joi');
 const logger = require('../utils/logger');
+const geofenceRoutes = require('./geofence');
 
 const router = express.Router();
 
@@ -33,6 +34,9 @@ const getServices = (req, res, next) => {
 
 // Apply middleware
 router.use(getServices);
+
+// Mount geofence routes
+router.use('/geofence', geofenceRoutes);
 
 // === GENERAL SAFETY ROUTES ===
 

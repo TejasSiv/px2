@@ -8,8 +8,13 @@ import {
   ClockIcon,
   CheckCircleIcon,
   XCircleIcon,
-  BellIcon
+  BellIcon,
+  ArrowPathIcon
 } from '@heroicons/react/24/outline';
+import { useFleetStore } from '@/store/fleet';
+import EmergencyPanel from '../EmergencyPanel';
+import CoordinationPanel from '../../coordination/CoordinationPanel';
+import ChargingPanel from '../../charging/ChargingPanel';
 
 interface SafetyAlert {
   id: string;
@@ -39,6 +44,7 @@ interface SafetyPanelProps {
 }
 
 const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
+  const drones = useFleetStore((state) => Object.values(state.drones));
   const [safetyStatus, setSafetyStatus] = useState<SafetyStatus>({
     overall: 'safe',
     lastCheck: Date.now(),
@@ -52,6 +58,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
   const [alerts, setAlerts] = useState<SafetyAlert[]>([]);
   const [isConnected, setIsConnected] = useState(false);
   const [showAllAlerts, setShowAllAlerts] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'emergencies' | 'coordination' | 'charging'>('overview');
 
   useEffect(() => {
     // Initialize safety WebSocket connection
@@ -242,9 +249,9 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
   const visibleAlerts = showAllAlerts ? alerts : alerts.slice(0, 5);
 
   return (
-    <div className={`bg-dark-secondary rounded-lg border border-dark-border ${className}`}>
+    <div className={`bg-dark-secondary rounded-lg border border-dark-border flex flex-col h-full max-h-full overflow-hidden ${className}`}>
       {/* Header */}
-      <div className="p-4 border-b border-dark-border">
+      <div className="p-4 border-b border-dark-border flex-shrink-0">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold text-text-primary">Safety Monitor</h3>
           <div className="flex items-center gap-2">
@@ -253,6 +260,63 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
               {isConnected ? 'Connected' : 'Disconnected'}
             </span>
           </div>
+        </div>
+
+        {/* Tab Navigation */}
+        <div className="flex flex-wrap gap-1 mb-3 min-w-0">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`px-2 py-1.5 rounded text-xs font-medium transition-colors flex-shrink-0 ${
+              activeTab === 'overview'
+                ? 'bg-dark-tertiary text-text-primary border border-dark-border'
+                : 'text-text-secondary hover:text-text-primary hover:bg-dark-hover'
+            }`}
+          >
+            Overview
+          </button>
+          <button
+            onClick={() => setActiveTab('emergencies')}
+            className={`px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1 flex-shrink-0 ${
+              activeTab === 'emergencies'
+                ? 'bg-dark-tertiary text-text-primary border border-dark-border'
+                : 'text-text-secondary hover:text-text-primary hover:bg-dark-hover'
+            }`}
+          >
+            <ShieldExclamationIcon className="w-3 h-3" />
+            Emergency
+            {drones.some(d => d.emergencyState && !d.emergencyState.resolved) && (
+              <span className="bg-red-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                {drones.filter(d => d.emergencyState && !d.emergencyState.resolved).length}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => setActiveTab('coordination')}
+            className={`px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1 flex-shrink-0 ${
+              activeTab === 'coordination'
+                ? 'bg-dark-tertiary text-text-primary border border-dark-border'
+                : 'text-text-secondary hover:text-text-primary hover:bg-dark-hover'
+            }`}
+          >
+            <ArrowPathIcon className="w-3 h-3" />
+            Coord
+          </button>
+          <button
+            onClick={() => setActiveTab('charging')}
+            className={`px-2 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1 flex-shrink-0 ${
+              activeTab === 'charging'
+                ? 'bg-dark-tertiary text-text-primary border border-dark-border'
+                : 'text-text-secondary hover:text-text-primary hover:bg-dark-hover'
+            }`}
+          >
+            <BoltIcon className="w-3 h-3" />
+            Charge
+            {drones.filter(d => d.status === 'charging').length > 0 && (
+              <span className="bg-yellow-500 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[18px] text-center">
+                {drones.filter(d => d.status === 'charging').length}
+              </span>
+            )}
+          </button>
         </div>
 
         {/* Overall Safety Status */}
@@ -279,7 +343,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
       </div>
 
       {/* Safety Metrics */}
-      <div className="p-4 border-b border-dark-border">
+      <div className="p-4 border-b border-dark-border flex-shrink-0">
         <div className="grid grid-cols-2 gap-4">
           <div className="bg-dark-tertiary rounded-lg p-3">
             <div className="text-2xl font-bold text-text-primary">
@@ -296,9 +360,12 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
         </div>
       </div>
 
-      {/* Recent Alerts */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-center justify-between p-4 pb-2">
+      {/* Content based on active tab */}
+      <div className="flex-1 min-h-0 overflow-auto">
+        {activeTab === 'overview' ? (
+          /* Recent Alerts */
+          <div className="flex flex-col min-h-full">
+        <div className="flex items-center justify-between p-4 pb-2 flex-shrink-0">
           <h4 className="font-medium text-text-primary">Recent Alerts</h4>
           {alerts.length > 5 && (
             <button
@@ -310,7 +377,7 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
           )}
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 pb-4 space-y-2">
+        <div className="flex-1 px-4 pb-4 space-y-2 overflow-y-auto">
           <AnimatePresence>
             {visibleAlerts.length > 0 ? (
               visibleAlerts.map((alert) => (
@@ -389,10 +456,27 @@ const SafetyPanel: React.FC<SafetyPanelProps> = ({ className = '' }) => {
             )}
           </AnimatePresence>
         </div>
+          </div>
+        ) : activeTab === 'emergencies' ? (
+          /* Emergency Panel */
+          <div className="h-full overflow-auto">
+            <EmergencyPanel drones={drones} className="h-full border-0 bg-transparent" />
+          </div>
+        ) : activeTab === 'coordination' ? (
+          /* Coordination Panel */
+          <div className="h-full overflow-auto">
+            <CoordinationPanel className="h-full border-0 bg-transparent" />
+          </div>
+        ) : (
+          /* Charging Panel */
+          <div className="h-full overflow-auto">
+            <ChargingPanel className="h-full border-0 bg-transparent" />
+          </div>
+        )}
       </div>
 
       {/* Last Update */}
-      <div className="px-4 py-2 border-t border-dark-border">
+      <div className="px-4 py-2 border-t border-dark-border flex-shrink-0">
         <div className="flex items-center gap-1 text-xs text-text-secondary">
           <ClockIcon className="w-3 h-3" />
           Last update: {formatTimestamp(new Date(safetyStatus.lastCheck).toISOString())}

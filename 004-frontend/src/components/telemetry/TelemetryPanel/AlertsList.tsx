@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { 
   ExclamationTriangleIcon, 
@@ -88,17 +88,21 @@ const AlertsList: React.FC<AlertsListProps> = ({
     return date.toLocaleDateString();
   };
 
-  // Sort alerts by severity and timestamp
-  const sortedAlerts = [...alerts].sort((a, b) => {
-    const severityOrder = { critical: 4, error: 3, warning: 2, info: 1 };
-    const severityDiff = (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
-    if (severityDiff !== 0) return severityDiff;
-    
-    return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
-  });
+  // Memoize sorted alerts to prevent constant resorting that causes flashing
+  const { activeAlerts, resolvedAlerts } = useMemo(() => {
+    const sortedAlerts = [...alerts].sort((a, b) => {
+      const severityOrder = { critical: 4, error: 3, warning: 2, info: 1 };
+      const severityDiff = (severityOrder[b.severity] || 0) - (severityOrder[a.severity] || 0);
+      if (severityDiff !== 0) return severityDiff;
+      
+      return new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime();
+    });
 
-  const activeAlerts = sortedAlerts.filter(alert => !alert.resolved);
-  const resolvedAlerts = sortedAlerts.filter(alert => alert.resolved);
+    return {
+      activeAlerts: sortedAlerts.filter(alert => !alert.resolved),
+      resolvedAlerts: sortedAlerts.filter(alert => alert.resolved)
+    };
+  }, [alerts]);
 
   if (alerts.length === 0) {
     return (
@@ -110,15 +114,15 @@ const AlertsList: React.FC<AlertsListProps> = ({
     );
   }
 
-  const AlertItem: React.FC<{ alert: Alert; index: number }> = ({ alert, index }) => {
+  const AlertItem: React.FC<{ alert: Alert; index: number }> = React.memo(({ alert, index }) => {
     const config = getSeverityConfig(alert.severity);
     const IconComponent = config.icon;
 
     return (
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: index * 0.1 }}
+        transition={{ duration: 0.2, delay: Math.min(index * 0.05, 0.3) }}
         className={`bg-dark-tertiary rounded-lg border-l-4 p-4 ${
           alert.acknowledged ? 'opacity-75' : ''
         } ${alert.resolved ? 'opacity-50' : ''}`}
@@ -212,7 +216,7 @@ const AlertsList: React.FC<AlertsListProps> = ({
         </div>
       </motion.div>
     );
-  };
+  });
 
   return (
     <div className="space-y-6">

@@ -82,16 +82,44 @@ export const useFleetStore = create<FleetStore>()(
     },
 
     updateDrone: (drone: DroneData) => {
-      set((state) => ({
-        drones: {
-          ...state.drones,
-          [drone.id]: {
-            ...drone,
-            lastUpdate: new Date().toISOString(),
+      set((state) => {
+        const existingDrone = state.drones[drone.id];
+        
+        // Preserve existing alerts if they haven't changed to prevent flashing
+        let alertsToUse = drone.alerts || [];
+        if (existingDrone && existingDrone.alerts) {
+          // Check if alerts are substantially the same (same IDs and messages)
+          const existingAlertMap = new Map(existingDrone.alerts.map(a => [a.id, a.message]));
+          const newAlertMap = new Map(alertsToUse.map(a => [a.id, a.message]));
+          
+          // If alert content is the same, keep the existing alert objects to prevent re-renders
+          if (existingAlertMap.size === newAlertMap.size) {
+            let alertsAreEqual = true;
+            for (const [id, message] of existingAlertMap) {
+              if (!newAlertMap.has(id) || newAlertMap.get(id) !== message) {
+                alertsAreEqual = false;
+                break;
+              }
+            }
+            
+            if (alertsAreEqual) {
+              alertsToUse = existingDrone.alerts; // Keep the same reference
+            }
+          }
+        }
+        
+        return {
+          drones: {
+            ...state.drones,
+            [drone.id]: {
+              ...drone,
+              alerts: alertsToUse,
+              lastUpdate: new Date().toISOString(),
+            },
           },
-        },
-        lastUpdate: new Date(),
-      }));
+          lastUpdate: new Date(),
+        };
+      });
     },
 
     updateMission: (mission: MissionData) => {
@@ -280,7 +308,7 @@ export const useFleetStore = create<FleetStore>()(
         store.updateStats(stats);
       };
 
-      setInterval(updateStats, 5000); // Update every 5 seconds
+      setInterval(updateStats, 15000); // Update every 15 seconds
 
       // Connect to telemetry service
       telemetryService.connect();

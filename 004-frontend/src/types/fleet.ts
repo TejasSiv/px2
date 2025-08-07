@@ -19,11 +19,80 @@ export interface Alert {
 export interface FleetAlert extends Alert {
   droneId?: string;
   droneName?: string;
-  type: 'system' | 'battery' | 'communication' | 'mission' | 'safety' | 'weather';
+  type: 'system' | 'battery' | 'communication' | 'mission' | 'safety' | 'weather' | 'geofence' | 'emergency';
   priority: number;
   details?: {
     [key: string]: any;
   };
+}
+
+export interface EmergencyState {
+  id: string;
+  droneId: string;
+  type: 'critical_battery' | 'system_failure' | 'communication_loss' | 'geofence_violation' | 'forced_landing' | 'collision_risk' | 'weather_emergency';
+  severity: 'critical' | 'emergency';
+  description: string;
+  triggeredAt: string;
+  resolved: boolean;
+  resolvedAt?: string;
+  autoResponse?: {
+    action: 'return_to_base' | 'emergency_landing' | 'hover' | 'abort_mission';
+    triggered: boolean;
+    triggeredAt?: string;
+  };
+  operatorOverride?: {
+    action: string;
+    triggeredBy: string;
+    triggeredAt: string;
+  };
+}
+
+export interface GeofenceCoordinate {
+  lat: number;
+  lng: number;
+}
+
+export interface GeofenceData {
+  id: string;
+  name: string;
+  type: 'inclusion' | 'exclusion' | 'emergency';
+  coordinates: GeofenceCoordinate[];
+  altitudeMin?: number;
+  altitudeMax?: number;
+  restrictionType: 'no_fly' | 'restricted' | 'emergency_only' | 'warning_only';
+  severity: 'critical' | 'warning' | 'info';
+  active: boolean;
+  createdBy?: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface GeofenceViolation {
+  id: string;
+  droneId: string;
+  geofenceId: string;
+  geofenceName?: string;
+  violationType: 'exclusion_violation' | 'inclusion_violation' | 'altitude_above' | 'altitude_below';
+  severity: 'critical' | 'warning' | 'info';
+  message: string;
+  position: {
+    latitude: number;
+    longitude: number;
+    altitude: number;
+  };
+  droneStatus: {
+    armed: boolean;
+    missionStatus: string;
+  };
+  timestamp: string;
+  acknowledged: boolean;
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+  resolved: boolean;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolution?: string;
 }
 
 export interface Mission {
@@ -70,6 +139,7 @@ export interface DroneData {
   lastUpdate: string;
   currentMission?: Mission;
   alerts?: Alert[];
+  emergencyState?: EmergencyState;
   
   // Additional telemetry data
   temperature?: number;

@@ -4,6 +4,7 @@ const { SafetyCache } = require('../cache/redis');
 const { query } = require('../database/connection');
 const BatteryMonitor = require('./batteryMonitor');
 const EmergencyProtocol = require('./emergencyProtocol');
+const GeofenceMonitor = require('./geofenceMonitor');
 
 class SafetyMonitor {
   constructor() {
@@ -13,6 +14,7 @@ class SafetyMonitor {
     // Initialize sub-monitors
     this.batteryMonitor = new BatteryMonitor();
     this.emergencyProtocol = new EmergencyProtocol();
+    this.geofenceMonitor = new GeofenceMonitor();
     
     // Overall safety status
     this.systemSafetyStatus = {
@@ -25,8 +27,8 @@ class SafetyMonitor {
     };
     
     this.config = {
-      monitoringInterval: parseInt(process.env.SAFETY_CHECK_INTERVAL) || 10000,
-      systemHealthCheckInterval: 30000
+      monitoringInterval: parseInt(process.env.SAFETY_CHECK_INTERVAL) || 15000, // 15 seconds for safety checks
+      systemHealthCheckInterval: 60000 // 1 minute for system health checks
     };
     
     logger.info('Safety Monitor initialized');
@@ -44,6 +46,7 @@ class SafetyMonitor {
       // Start sub-monitors
       await this.batteryMonitor.start();
       await this.emergencyProtocol.start();
+      await this.geofenceMonitor.start();
       
       // Start main monitoring loop
       this.monitoringInterval = setInterval(
@@ -92,6 +95,7 @@ class SafetyMonitor {
     // Stop sub-monitors
     await this.batteryMonitor.stop();
     await this.emergencyProtocol.stop();
+    await this.geofenceMonitor.stop();
     
     logger.info('Safety Monitor stopped');
   }
@@ -217,8 +221,9 @@ class SafetyMonitor {
       // Check sub-service health
       health.services.batteryMonitor = this.batteryMonitor.isRunning ? 'healthy' : 'critical';
       health.services.emergencyProtocol = this.emergencyProtocol.isRunning ? 'healthy' : 'critical';
+      health.services.geofenceMonitor = this.geofenceMonitor.isRunning ? 'healthy' : 'critical';
       
-      if (!this.batteryMonitor.isRunning || !this.emergencyProtocol.isRunning) {
+      if (!this.batteryMonitor.isRunning || !this.emergencyProtocol.isRunning || !this.geofenceMonitor.isRunning) {
         health.overall = 'degraded';
       }
       
@@ -417,6 +422,7 @@ class SafetyMonitor {
       systemSafetyStatus: this.systemSafetyStatus,
       batteryMonitor: this.batteryMonitor.getMonitoringStats(),
       emergencyProtocol: this.emergencyProtocol.getStats(),
+      geofenceMonitor: this.geofenceMonitor.getMonitoringStats(),
       config: this.config
     };
   }
@@ -428,6 +434,10 @@ class SafetyMonitor {
 
   getEmergencyProtocol() {
     return this.emergencyProtocol;
+  }
+
+  getGeofenceMonitor() {
+    return this.geofenceMonitor;
   }
 }
 

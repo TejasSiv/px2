@@ -5,7 +5,11 @@ import {
   ClockIcon,
   ExclamationTriangleIcon,
   EyeIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ShieldExclamationIcon,
+  FireIcon,
+  ArrowPathIcon,
+  QueueListIcon
 } from '@heroicons/react/24/outline';
 import { DroneData } from '@/types/fleet';
 import BatteryIndicator from '@/components/telemetry/BatteryIndicator';
@@ -54,7 +58,7 @@ const DroneStatusCard: React.FC<DroneStatusCardProps> = ({
           color: '#f85149',
           bgColor: '#f85149',
           label: 'Emergency',
-          icon: ExclamationTriangleIcon,
+          icon: ShieldExclamationIcon,
         };
       case 'idle':
       default:
@@ -99,7 +103,7 @@ const DroneStatusCard: React.FC<DroneStatusCardProps> = ({
       transition={{ duration: 0.3, delay: index * 0.05 }}
       onClick={onSelect}
       className={`
-        relative bg-dark-tertiary rounded-lg p-3 border cursor-pointer transition-all duration-200 hover:bg-dark-hover mb-2 w-full
+        relative bg-dark-tertiary rounded-lg p-3 border cursor-pointer transition-all duration-200 hover:bg-dark-hover w-full
         ${isSelected 
           ? 'border-status-active shadow-glow' 
           : 'border-dark-border hover:border-dark-hover'
@@ -156,25 +160,30 @@ const DroneStatusCard: React.FC<DroneStatusCardProps> = ({
         </button>
       </div>
 
-      {/* Compact Metrics Row */}
-      <div className="grid grid-cols-3 gap-3 text-xs">
-        {/* Battery */}
-        <div className="min-w-0">
-          <div className="text-text-secondary text-xs mb-1">Battery</div>
-          <BatteryIndicator
-            level={drone.batteryLevel}
-            voltage={drone.batteryVoltage}
-            inFlight={['active', 'in_flight'].includes(drone.status)}
-            status={drone.status}
-            size="sm"
-            showVoltage={false}
-          />
+      {/* Compact Metrics - Vertical Stack for better spacing */}
+      <div className="space-y-2">
+        {/* Battery Row */}
+        <div className="flex items-center justify-between">
+          <span className="text-text-secondary text-xs">Battery</span>
+          <div className="flex items-center gap-1">
+            <div className="w-16">
+              <BatteryIndicator
+                level={drone.batteryLevel}
+                voltage={drone.batteryVoltage}
+                inFlight={['active', 'in_flight'].includes(drone.status)}
+                status={drone.status}
+                size="sm"
+                showVoltage={false}
+              />
+            </div>
+            <span className="text-xs text-text-primary font-mono">{Math.round(drone.batteryLevel)}%</span>
+          </div>
         </div>
 
-        {/* Signal */}
-        <div className="min-w-0">
-          <div className="text-text-secondary text-xs mb-1">Signal</div>
-          <div className="flex items-center gap-1">
+        {/* Signal Row */}
+        <div className="flex items-center justify-between">
+          <span className="text-text-secondary text-xs">Signal</span>
+          <div className="flex items-center gap-2">
             <div className="flex items-end gap-0.5">
               {[0, 1, 2, 3].map((bar) => (
                 <div
@@ -188,35 +197,89 @@ const DroneStatusCard: React.FC<DroneStatusCardProps> = ({
                 />
               ))}
             </div>
-            <span className="text-xs font-mono text-text-secondary">{drone.signalStrength}dBm</span>
+            <span className="text-xs font-mono text-text-secondary truncate">{Math.round(drone.signalStrength)}dBm</span>
           </div>
         </div>
 
-        {/* Mission/Altitude */}
-        <div className="min-w-0">
-          <div className="text-text-secondary text-xs mb-1">
-            {drone.currentMission ? 'Mission' : 'Altitude'}
+        {/* Emergency State Row */}
+        {drone.emergencyState && !drone.emergencyState.resolved && (
+          <div className="flex items-center justify-between bg-red-900/20 border border-red-500/30 rounded p-1.5">
+            <div className="flex items-center gap-2">
+              <FireIcon className="w-3 h-3 text-red-400 flex-shrink-0" />
+              <span className="text-xs font-medium text-red-400">EMERGENCY</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-red-300 truncate max-w-20" title={drone.emergencyState.description}>
+                {drone.emergencyState.type.replace('_', ' ').toUpperCase()}
+              </span>
+            </div>
           </div>
+        )}
+
+        {/* Coordination Status Row */}
+        {drone.alerts?.some(alert => alert.category === 'coordination') && (
+          <div className="flex items-center justify-between bg-blue-900/20 border border-blue-500/30 rounded p-1.5">
+            <div className="flex items-center gap-2">
+              <ArrowPathIcon className="w-3 h-3 text-blue-400 flex-shrink-0" />
+              <span className="text-xs font-medium text-blue-400">COORDINATION</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-blue-300 truncate max-w-24">
+                {drone.alerts.find(a => a.category === 'coordination')?.message.includes('avoidance') ? 'MANEUVER' : 'WARNING'}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Charging Status Row */}
+        {drone.alerts?.some(alert => alert.category === 'charging') && (
+          <div className="flex items-center justify-between bg-yellow-900/20 border border-yellow-500/30 rounded p-1.5">
+            <div className="flex items-center gap-2">
+              {drone.status === 'charging' ? (
+                <BoltIcon className="w-3 h-3 text-yellow-400 flex-shrink-0" />
+              ) : (
+                <QueueListIcon className="w-3 h-3 text-yellow-400 flex-shrink-0" />
+              )}
+              <span className="text-xs font-medium text-yellow-400">
+                {drone.status === 'charging' ? 'CHARGING' : 'QUEUED'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-yellow-300 truncate max-w-24">
+                {drone.status === 'charging' ? 
+                  drone.alerts.find(a => a.category === 'charging')?.message.match(/\d+min/)?.[0] || 'ACTIVE' :
+                  `POS ${drone.alerts.find(a => a.category === 'charging')?.message.match(/position (\d+)/)?.[1] || '?'}`
+                }
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Mission/Altitude Row */}
+        <div className="flex items-center justify-between">
+          <span className="text-text-secondary text-xs">
+            {drone.currentMission ? 'Mission' : 'Altitude'}
+          </span>
           {drone.currentMission ? (
             <div className="flex items-center gap-1">
               <div className="w-1.5 h-1.5 bg-status-active rounded-full"></div>
-              <span className="truncate text-xs text-text-primary">{drone.currentMission.progress}%</span>
+              <span className="text-xs text-text-primary font-medium">{Math.round(drone.currentMission.progress)}%</span>
             </div>
           ) : (
-            <div className="text-xs text-text-primary">{drone.position.alt.toFixed(0)}m</div>
+            <span className="text-xs text-text-primary font-mono">{Math.round(drone.position.alt)}m</span>
           )}
         </div>
       </div>
 
       {/* Bottom Info Row */}
       <div className="flex items-center justify-between mt-2 pt-2 border-t border-dark-border text-xs">
-        <div className="flex items-center gap-3">
-          <span className="text-text-secondary">{drone.speed.toFixed(1)} m/s</span>
+        <div className="flex items-center gap-2 min-w-0 flex-1">
+          <span className="text-text-secondary whitespace-nowrap">{Math.round(drone.speed * 10) / 10}m/s</span>
           {drone.alerts && drone.alerts.length > 0 && (
-            <span className="text-status-warning">{drone.alerts.length} alerts</span>
+            <span className="text-status-warning whitespace-nowrap">{drone.alerts.length} alerts</span>
           )}
         </div>
-        <span className="text-text-muted">{formatTimeAgo(drone.lastUpdate)}</span>
+        <span className="text-text-muted text-right whitespace-nowrap flex-shrink-0">{formatTimeAgo(drone.lastUpdate)}</span>
       </div>
     </motion.div>
   );

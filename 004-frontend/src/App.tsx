@@ -5,6 +5,7 @@ import FleetStatus from '@/components/fleet/FleetStatus';
 import TelemetryPanel from '@/components/telemetry/TelemetryPanel';
 import ConnectionStatusIndicator from '@/components/common/ConnectionStatusIndicator';
 import SafetyPanel from '@/components/safety/SafetyPanel';
+import ResizablePanel from '@/components/common/ResizablePanel';
 import { MissionControls } from '@/components/mission';
 import { useFleetStore, useConnectionStatus, useSelectedDrone, initializeFleetStore } from '@/store/fleet';
 import { initializeMissionWebSocket } from '@/store/mission';
@@ -18,6 +19,11 @@ function App() {
   const selectDrone = useFleetStore((state) => state.selectDrone);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showMissionCenter, setShowMissionCenter] = useState(false);
+  const [safetyPanelHeight, setSafetyPanelHeight] = useState(() => {
+    // Restore saved height from localStorage
+    const saved = localStorage.getItem('safetyPanelHeight');
+    return saved ? parseInt(saved, 10) : 400;
+  });
 
   // Initialize the fleet store and WebSocket connections
   useEffect(() => {
@@ -76,8 +82,8 @@ function App() {
           )}
           
           {sidebarCollapsed && (
-            <div className="p-2 space-y-2">
-              {drones.slice(0, 8).map((drone) => (
+            <div className="p-2 space-y-2 overflow-y-auto scrollbar-thin">
+              {drones.map((drone) => (
                 <button
                   key={drone.id}
                   onClick={() => handleDroneSelect(drone.id)}
@@ -155,10 +161,10 @@ function App() {
               />
             </div>
             
-            {/* Right Panel - Split between Telemetry, Safety, and Missions */}
-            <div className="lg:col-span-1 h-full overflow-hidden flex flex-col gap-4">
-              {/* Telemetry Panel - Top Third */}
-              <div className="flex-1 border border-dark-border rounded-lg bg-dark-secondary overflow-hidden">
+            {/* Right Panel - Scrollable Split between Telemetry, Safety, and Missions */}
+            <div className="lg:col-span-1 h-full overflow-y-auto overflow-x-hidden flex flex-col gap-4 pr-2 scrollbar-thin">
+              {/* Telemetry Panel - Top Section */}
+              <div className="flex-shrink-0 h-[450px] border border-dark-border rounded-lg bg-dark-secondary overflow-hidden">
                 <TelemetryPanel
                   drone={selectedDrone}
                   isLive={isConnected}
@@ -166,13 +172,24 @@ function App() {
                 />
               </div>
               
-              {/* Safety Panel - Middle Third */}
-              <div className="flex-1">
-                <SafetyPanel className="h-full" />
+              {/* Safety Panel - Middle Section - Resizable */}
+              <div className="flex-shrink-0">
+                <ResizablePanel
+                  initialHeight={safetyPanelHeight}
+                  minHeight={250}
+                  maxHeight={600}
+                  onHeightChange={(height) => {
+                    setSafetyPanelHeight(height);
+                    localStorage.setItem('safetyPanelHeight', height.toString());
+                  }}
+                  className=""
+                >
+                  <SafetyPanel className="h-full" />
+                </ResizablePanel>
               </div>
               
-              {/* Mission Controls - Bottom Third */}
-              <div className="flex-1">
+              {/* Mission Controls - Bottom Section */}
+              <div className="flex-shrink-0 h-[500px] mb-4">
                 <MissionControls />
               </div>
             </div>
