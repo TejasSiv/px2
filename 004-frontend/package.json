@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "postinstall": "chmod +x node_modules/.bin/vite || true",
+    "postinstall": "chmod +x node_modules/.bin/vite || true && chmod +x node_modules/@esbuild/linux-x64/bin/esbuild || true",
     "build": "vite build",
     "type-check": "tsc --noEmit",
     "preview": "vite preview"
